@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#c2436a" />
+    <meta name="description" content="清晰管理每一项作业 DDL，掌握倒计时与完成进度。" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="作业雷达" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-180.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+    <title>作业雷达 · DDL 管理</title>
+    <script type="module" crossorigin src="./assets/index-DMOYcx_z.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DPZkTVoC.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- 兜底：脚本没跑起来时别留一片白屏，至少把原因写出来 -->
+    <script>
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.childElementCount === 0) {
+            root.innerHTML =
+              '<div style="max-width:520px;margin:12vh auto;padding:24px;font:14px/1.8 Noto Sans SC,Microsoft YaHei,sans-serif;color:#38483f">' +
+              '<h1 style="font-size:18px;margin:0 0 12px">界面脚本没有加载成功</h1>' +
+              '<p style="margin:0 0 8px">地址：<code style="background:#eef3ee;padding:2px 5px;border-radius:5px">' +
+              location.href + '</code></p>' +
+              '<p style="margin:0">在项目目录执行 <code>npm run build</code> 后重启应用；如果仍然空白，把这段文字发给维护者。</p></div>';
+          }
+        }, 4000);
+      });
+    </script>
+    <!-- 运行时配置：桌面端是空的（走 preload），局域网网页版由服务端注入同步地址 -->
+    <script src="./runtime-config.js"></script>
+  </body>
+</html>
