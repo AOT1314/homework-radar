@@ -40,12 +40,19 @@ const week = open
   })
   .sort((a, b) => new Date(a.due) - new Date(b.due));
 
+const shanghai = (date) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(date);
+  const get = (type) => parts.find((part) => part.type === type)?.value || '';
+  return `${get('month')}/${get('day')} ${get('hour')}:${get('minute')}`;
+};
+
 const fmt = (item) => {
   const due = new Date(item.due);
-  const hh = `${String(due.getHours()).padStart(2, '0')}:${String(due.getMinutes()).padStart(2, '0')}`;
   const remain = (due.getTime() - now) / HOUR;
   const tail = remain < 0 ? `已逾期 ${Math.abs(remain).toFixed(0)}h` : remain < 24 ? `剩 ${remain.toFixed(1)}h` : `剩 ${(remain / 24).toFixed(1)}d`;
-  return `· ${due.getMonth() + 1}/${due.getDate()} ${hh} ${item.subject}｜${item.title}（${tail}）`;
+  return `· ${shanghai(due)} ${item.subject}｜${item.title}（${tail}）`;
 };
 
 const lines = [];
@@ -63,7 +70,9 @@ const title = overdue.length
   ? `⚠ 有 ${overdue.length} 项已逾期`
   : soon.length
     ? `⏰ 今天还有 ${soon.length} 项要交`
-    : '作业雷达 · 明天有截止';
+    : tomorrow.length
+      ? '作业雷达 · 明天有截止'
+      : '作业雷达 · 今日清单';
 
 if (!topic) {
   console.log('【未配置 NTFY_TOPIC，仅输出】');
