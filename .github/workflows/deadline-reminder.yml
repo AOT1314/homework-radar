@@ -1,0 +1,24 @@
+name: deadline-reminder
+
+on:
+  schedule:
+    # 每天 08:30（Asia/Shanghai = UTC+8）→ 00:30 UTC
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Send deadline reminder
+        env:
+          RADAR_SPACE: ${{ vars.RADAR_SPACE }}
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
+        run: node scripts/notify-cloud.mjs
