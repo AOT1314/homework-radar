@@ -21,6 +21,13 @@ if (!response.ok) {
 const rows = ((await response.json()).changes || []).filter((row) => !row.deleted);
 const items = rows.map((row) => row.payload).filter((item) => item?.title && item?.due);
 
+// Bark 的 device key：优先环境变量，其次同步空间里的 config:bark 行（改 key 不用重新部署）
+const configRow = rows.find((row) => row.id === 'config:bark');
+const barkKey = (process.env.BARK_KEY || configRow?.payload?.key || '')
+  .replace(/^https?:\/\/api\.day\.app\//, '')
+  .replace(/\/+$/, '')
+  .split('/')[0];
+
 const now = Date.now();
 const HOUR = 3600 * 1000;
 const open = items.filter((item) => !item.done);
@@ -74,11 +81,33 @@ const title = overdue.length
       ? '作业雷达 · 明天有截止'
       : '作业雷达 · 今日清单';
 
+// Bark 优先（iOS 即时），ntfy 作为备份
+let barkOk = false;
+if (barkKey) {
+  const bark = await fetch('https://api.day.app/push', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      device_key: barkKey,
+      title,
+      body: lines.join('\n'),
+      group: '作业雷达',
+      level: overdue.length ? 'timeSensitive' : 'active',
+      icon: 'https://aot1314.github.io/homework-radar/icons/icon-192.png',
+    }),
+    signal: AbortSignal.timeout(20000),
+  }).catch((error) => ({ ok: false, status: 0, text: async () => error.message }));
+  barkOk = Boolean(bark.ok);
+  console.log(barkOk ? 'Bark 已推送' : `Bark 推送失败 ${bark.status}`);
+} else {
+  console.log('未配置 Bark key，跳过');
+}
+
 if (!topic) {
-  console.log('【未配置 NTFY_TOPIC，仅输出】');
+  console.log('【未配置 NTFY_TOPIC，跳过 ntfy】');
   console.log(title);
   console.log(lines.join('\n'));
-  process.exit(0);
+  process.exit(barkOk ? 0 : 0);
 }
 
 const push = await fetch(`${NTFY_SERVER}/`, {
@@ -96,5 +125,5 @@ const push = await fetch(`${NTFY_SERVER}/`, {
 
 console.log(title);
 console.log(lines.join('\n'));
-console.log(push.ok ? '已推送' : `推送失败 ${push.status}`);
-process.exit(push.ok ? 0 : 1);
+console.log(push.ok ? 'ntfy 已推送' : `ntfy 推送失败 ${push.status}`);
+process.exit(push.ok || barkOk ? 0 : 1);
