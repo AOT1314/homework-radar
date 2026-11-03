@@ -28,6 +28,14 @@ const barkKey = (process.env.BARK_KEY || configRow?.payload?.key || '')
   .replace(/\/+$/, '')
   .split('/')[0];
 
+// 去重：workflow 挂了三个时间点互为备份，这里保证同一天只推一次
+const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
+const lastPush = rows.find((row) => row.id === 'config:last-push')?.payload?.date;
+if (lastPush === today) {
+  console.log(`今天（${today}）已经推送过，跳过。`);
+  process.exit(0);
+}
+
 const now = Date.now();
 const HOUR = 3600 * 1000;
 const open = items.filter((item) => !item.done);
@@ -126,4 +134,20 @@ const push = await fetch(`${NTFY_SERVER}/`, {
 console.log(title);
 console.log(lines.join('\n'));
 console.log(push.ok ? 'ntfy 已推送' : `ntfy 推送失败 ${push.status}`);
+
+// 记录今天已推送，避免后面几个 cron 时间点重复打扰
+if (push.ok || barkOk) {
+  const mark = await fetch(`${SUPABASE_URL}/rest/v1/rpc/sync_assignments`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      p_space_id: space,
+      p_changes: [{ id: 'config:last-push', payload: { date: today, at: new Date().toISOString() }, updatedAt: Date.now(), deleted: false }],
+      p_since: 0,
+    }),
+    signal: AbortSignal.timeout(20000),
+  }).catch(() => null);
+  console.log(mark?.ok ? '已记录今日推送时间' : '记录推送时间失败（不影响本次推送）');
+}
+
 process.exit(push.ok || barkOk ? 0 : 1);
