@@ -2,12 +2,19 @@ name: deadline-reminder
 
 on:
   schedule:
-    # 每天 08:30（Asia/Shanghai = UTC+8）→ 00:30 UTC
-    - cron: '30 0 * * *'
+    # 北京时间 08:20 / 08:40 / 09:00，三个时间点互为备份
+    # GitHub 的定时触发经常延迟甚至整次漏掉，所以多挂几个；脚本内部按天去重，只会推一次
+    - cron: '20 0 * * *'
+    - cron: '40 0 * * *'
+    - cron: '0 1 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: deadline-reminder
+  cancel-in-progress: false
 
 jobs:
   remind:
